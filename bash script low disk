@@ -1,1 +1,14 @@
-filesystem="/";BREAK="===============================================================";echo -ne "\n $BREAK \n \t Disk Usage for $filesystem $(date +'%F') \n $BREAK \n\n";df -h $filesystem; echo -e '\n\n Volume Group Usage: \n'; vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4); echo -e '\n'; echo -e "Largest Folders:\n"; du -xSk $filesystem | sort -rn | head -20|awk '{printf "%d MB\t%s\n",($1/1024),$NF}' && echo -e "\n\n"; echo -e "Largest Files:\n"; find $filesystem -mount -type f -ls|sort -rnk7 |head -20|awk '{printf "%d MB\t%s\n",($7/1024)/1024,$NF}';echo -e "\n\n Open Deleted Files:\n"  ;lsof | grep $filesystem | grep deleted| awk '{ if($7 > 1048576) print $7/1048576, "MB ",$9,$1 }' | sort -n -u | tail; echo -e "\n $BREAK"
+filesystem="/";
+BREAK="===============================================================";
+echo -ne "\n $BREAK \n \t Disk Usage for $filesystem $(date +'%F') \n $BREAK \n\n";
+df -h $filesystem; 
+echo -e '\n\n Volume Group Usage: \n';
+vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4);
+echo -e '\n';
+echo -e "Largest Folders:\n";
+du -xSk $filesystem | sort -rn | head -20|awk '{printf "%d MB\t%s\n",($1/1024),$NF}' && echo -e "\n\n";
+echo -e "Largest Files:\n";
+find $filesystem -mount -type f -ls|sort -rnk7 |head -20|awk '{printf "%d MB\t%s\n",($7/1024)/1024,$NF}';
+echo -e "\n\n Open Deleted Files:\n"  ;
+lsof | grep $filesystem | grep deleted| awk '{ if($7 > 1048576) print $7/1048576, "MB ",$9,$1 }' | sort -n -u | tail;
+echo -e "\n $BREAK"
