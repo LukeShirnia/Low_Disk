@@ -1,5 +1,15 @@
 #!/bin/bash
 
+lsof_check() {
+
+    echo -ne "\n $BREAK \n \t Number of Open Deleted Files on:$filesystem \n $BREAK \n\n";
+    lsof 2> /dev/null | grep $filesystem | grep deleted | wc -l;
+ 
+    echo -ne "\n $BREAK \n \t Open Deleted Files on :$filesystem bigger than 1GB \n $BREAK \n\n";
+    lsof 2> /dev/null | grep $filesystem | grep deleted| awk '{ if($9 > 1048576) print $9/1048576, "MB ",$9,$1 }' | sort -n -u | tail;
+
+}
+
 BREAK="============================================================"
 
 echo
@@ -50,10 +60,10 @@ find $filesystem -mount -ignore_readdir_race -type f -mtime +30 -exec du {} + 2>
 echo -ne "\n $BREAK \n \t == Volume Group Usage == \n $BREAK \n\n";
 vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4);
 
-echo -ne "\n $BREAK \n \t Number of Open Deleted Files on:$filesystem \n $BREAK \n\n";
-lsof 2> /dev/null | grep $filesystem | grep deleted | wc -l;
+if [ $( which losf 2>/dev/null ) ]; then 
+    lsof_check
+fi
 
-echo -ne "\n $BREAK \n \t Open Deleted Files on :$filesystem bigger than 1GB \n $BREAK \n\n";
-lsof 2> /dev/null | grep $filesystem | grep deleted| awk '{ if($7 > 1048576) print $7/1048576, "MB ",$9,$1 }' | sort -n -u | tail;
-
+echo 
 echo $BREAK
+echo 
