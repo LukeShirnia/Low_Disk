@@ -10,16 +10,24 @@ lsof_check() {
 
 }
 
-BREAK="============================================================"
-
-echo
-echo "If you would like to run this against another filesystem please specify it with the -f flag"
-echo "Example: monkey -d -- -f /data/"
-echo ""
-
 ServerTime() {
     date "+%F %H:%M %Z"
 }
+PrintHeader() {
+    echo -ne "\n $BREAK \n \t == $1 == \n $BREAK \n\n";
+}
+Intro() {
+    echo
+    echo "If you would like to run this against another filesystem please specify it with the -f flag"
+    echo "Example: monkey -d -- -f /data/"
+    echo ""
+}
+
+BREAK="============================================================"
+
+
+
+Intro
 
 # check if alternative filesystem has been specified
 if [ $# == 0 ]; then
@@ -34,31 +42,33 @@ if [ ! -d $filesystem ]; then
     exit
 fi
 
-# Print data and time
-echo "== Server Date/Time: ==";
+PrintHeader "Server Date/Time"
+
 ServerTime
+
 echo 
 # Echo the filesystem the script is being run against
 echo "Running against $filesystem Filesystem"
 
-
-echo -ne "\n $BREAK \n \t == Filesystem Information == \n $BREAK \n\n";
+PrintHeader "Filesystem Information"
 df -PTh $filesystem;
 
-echo -ne "\n $BREAK \n \t == Inode Information == \n $BREAK \n\n";
+PrintHeader "Inode Information"
 df -PTi $filesystem;
 
-echo -ne "\n $BREAK \n \t == Largest Directories ==  \n $BREAK \n\n";
+PrintHeader "Largest Directories"
 du -hcx --max-depth=2 $filesystem 2>/dev/null | grep -P '^([0-9]\.*)*G(?!.*(\btotal\b|\./$))' | sort -rnk1,1 | head -10 | column -t;
 
-echo -ne "\n $BREAK \n \t == Largest Files ==  \n $BREAK \n\n";
+PrintHeader "Largest Files"
 find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -t
 
-echo -ne "\n $BREAK \n \t == Largest Files Older Than 30 Days ==  \n $BREAK \n\n";
+PrintHeader "Largest Files Older Than 30 Days"
 find $filesystem -mount -ignore_readdir_race -type f -mtime +30 -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print; }' | column -t
 
-echo -ne "\n $BREAK \n \t == Volume Group Usage == \n $BREAK \n\n";
-vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4);
+PrintHeader "Volume Group Usage"
+
+vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4)
+
 
 if [ $( which losf 2>/dev/null ) ]; then 
     lsof_check
