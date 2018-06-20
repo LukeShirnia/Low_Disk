@@ -36,9 +36,10 @@ lsof_check_number() {
 home_rack() {
     if [ -d "/home/rack" ]; then
         rack=$( du /home/rack | awk '{print $1}' )
-        if [ $rack -gt 1073741824 ]; then 
-            Printheader "/home/rack/ LARGE! Please check"
-            echo "$(( $rack / 1024 )) MB"
+        if [ $rack -gt 1048576 ]; then 
+            PrintHeader "/home/rack/ LARGE! Please check"
+            echo "$( du -h /home/rack --max-depth=1  | head -5 ) MB"
+            echo
         else
             NotRun+=("home_rack")
         fi
