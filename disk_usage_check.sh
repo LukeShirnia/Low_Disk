@@ -34,11 +34,15 @@ lsof_check_number() {
     fi
 }
 home_rack() {
-    rack=$( du /home/rack | awk '{print $1}' )
-    if [ $rack -gt 1073741824 ]; then 
-        echo "/home/rack LARGE! Please check"
-    else
-        NotRun+=("home_rack")
+    if [ -d "/home/rack" ]; then
+        rack=$( du /home/rack | awk '{print $1}' )
+        if [ $rack -gt 1073741824 ]; then 
+            echo "/home/rack LARGE! Please check"
+        elif [ ! -d "/home/rack" ]; then
+            NotRun+=("home_rack_exists_false")
+        else
+            NotRun+=("home_rack")
+        fi
     fi
 }
 NotRun() {
@@ -60,6 +64,9 @@ NotRun() {
         ;;
         "home_rack" )
             printf "[OK]    /home/rack smaller than 1GB: $(($rack / 1024)) MB\n"
+        ;;
+        "home_rack_exists_false" )
+            echo "/home/rack does not appear to exist"
         ;;
         esac
         echo
