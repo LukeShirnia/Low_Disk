@@ -2,20 +2,20 @@
 
 BREAK="============================================================"
 
-NotRun=()
+NotRun=()              # Array to store all commands not run during script
 
-ServerTime() {
+ServerTime() {         # Prints current server time
     date "+%F %H:%M %Z"
 }
-PrintHeader() {
+PrintHeader() {        # Common header used throughout script
     echo -ne "\n$BREAK \n \t == $1 == \n$BREAK \n\n";
 }
-usage() {
+usage() {              # Print script usage function
     echo "Usage : $0"
     echo "Usage : $0 -f filesystem"
     exit 1
 }
-lsof_check_number() {
+lsof_check_number() {  # Check deleted files function
     PrintHeader "Number of Open Deleted Files on: $filesystem"
     if [ $(lsof 2> /dev/null | grep $filesystem | grep deleted | wc -l ) ]; then
         printf "Number of deleted files: "
@@ -33,7 +33,7 @@ lsof_check_number() {
         NotRun+=("lsof_large")
     fi
 }
-home_rack() {
+home_rack() {         # Check disk usage in /home/rack
     if [ -d "/home/rack" ]; then
         rack=$( du /home/rack | awk '{print $1}' )
         if [ $rack -gt 1048576 ]; then 
@@ -47,7 +47,7 @@ home_rack() {
         NotRun+=("home_rack_exists_false")
     fi
 }
-NotRun() {
+NotRun() {           # Print a list of commands not run at the end of the script
     echo $BREAK
     echo
 
@@ -76,7 +76,7 @@ NotRun() {
 }
 
 
-
+# Checking the script arguments and assigning the appropriate $filesystem
 case $1 in
 
 "" )
@@ -108,6 +108,7 @@ case $1 in
 ;;
 esac
 
+# Start printing the output of script:
 
 PrintHeader "Server Date/Time"
 
@@ -132,7 +133,7 @@ find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -
 PrintHeader "Largest Files Older Than 30 Days"
 find $filesystem -mount -ignore_readdir_race -type f -mtime +30 -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print; }' | column -t
 
-
+# Check to see if logical volumes are being used
 if [ $( vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4) ) ]; then
     PrintHeader "Volume Group Usage"
     vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4)
@@ -140,15 +141,17 @@ else
     NotRun+=("vgs")
 fi
 
-
+# Check if lsof is installed
 if [ $( which lsof 2>/dev/null ) ]; then 
     lsof_check_number
 else
     NotRun+=("lsof_large")
 fi
 
+# Run home_rack function to check disk usage
 home_rack
 
+# Print commands/sections not run
 NotRun
 
 echo 
