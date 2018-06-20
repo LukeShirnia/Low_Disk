@@ -36,13 +36,15 @@ lsof_check_number() {
 home_rack() {
     if [ -d "/home/rack" ]; then
         rack=$( du /home/rack | awk '{print $1}' )
-        if [ $rack -gt 1073741824 ]; then 
-            echo "/home/rack LARGE! Please check"
-        elif [ ! -d "/home/rack" ]; then
-            NotRun+=("home_rack_exists_false")
+        if [ $rack -gt 1048576 ]; then 
+            PrintHeader "/home/rack/ LARGE! Please check"
+            echo "$( du -h /home/rack --max-depth=1  | head -5 ) MB"
+            echo
         else
             NotRun+=("home_rack")
         fi
+    else
+        NotRun+=("home_rack_exists_false")
     fi
 }
 NotRun() {
@@ -54,19 +56,19 @@ NotRun() {
         case $i in
 
         "vgs" )
-            echo "[OK]    No Volume groups (vgs) found"
+            echo "[OK]      No Volume groups (vgs) found"
         ;; 
         "lsof" )
-            echo "[CHECK] lsof not found, cannot check 'Open Deleted Files'"
+            echo "[CHECK]   lsof not found, cannot check 'Open Deleted Files'"
         ;;
         "lsof_large" )
-            echo "[OK]    No deleted files over 1GB"
+            echo "[OK]      No deleted files over 1GB"
         ;;
         "home_rack" )
-            printf "[OK]    /home/rack smaller than 1GB: $(($rack / 1024)) MB\n"
+            printf "[OK]      /home/rack smaller than 1GB: $(($rack / 1024)) MB\n"
         ;;
         "home_rack_exists_false" )
-            echo "/home/rack does not appear to exist"
+            echo "[WARNING] /home/rack does not appear to exist"
         ;;
         esac
         echo
