@@ -34,7 +34,8 @@ lsof_check_number() {
     fi
 }
 home_rack() {
-    if [ $( du /home/rack | awk '{print $1}' ) -gt 1073741824 ]; then 
+    rack=$( du /home/rack | awk '{print $1}' )
+    if [ $rack -gt 1073741824 ]; then 
         echo "/home/rack LARGE! Please check"
     else
         NotRun+=("home_rack")
@@ -58,7 +59,7 @@ NotRun() {
             echo "[OK]    No deleted files over 1GB"
         ;;
         "home_rack" )
-            echo "[OK]    /home/rack smaller than 1GB"
+            printf "[OK]    /home/rack smaller than 1GB: $(($rack / 1024)) MB\n"
         ;;
         esac
         echo
