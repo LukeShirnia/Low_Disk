@@ -4,9 +4,6 @@ BREAK="============================================================"
 
 NotRun=()              # Array to store all commands not run during script
 
-ServerTime() {         # Prints current server time
-    date "+%F %H:%M %Z"
-}
 PrintHeader() {        # Common header used throughout script
     echo -ne "\n$BREAK \n \t == $1 == \n$BREAK \n\n";
 }
@@ -16,15 +13,6 @@ usage() {              # Print script usage function
     exit 1
 }
 lsof_check_number() {  # Check deleted files function
-    PrintHeader "Number of Open Deleted Files on: $filesystem"
-    if [ $(lsof 2> /dev/null | grep $filesystem | grep deleted | wc -l ) ]; then
-        printf "Number of deleted files: "
-        lsof 2> /dev/null | grep $filesystem | grep deleted | wc -l;
-        echo
-    else
-        return
-    fi
-    
     if [ $(lsof 2> /dev/null | awk '/$filesystem/ && /deleted/' | awk '{ if($9 > 1048576) print $9/1048576, "MB ",$9,$1 }' | sort -n -u | tail ) ]; then
         PrintHeader "Open Deleted Files Over 1GB"
         echo -ne "\n $BREAK \n \t Open Deleted Files on :$filesystem bigger than 1GB \n $BREAK \n\n";
@@ -38,7 +26,7 @@ home_rack() {         # Check disk usage in /home/rack
         rack=$( du /home/rack | awk '{print $1}' )
         if [ $rack -gt 1048576 ]; then 
             PrintHeader "/home/rack/ LARGE! Please check"
-            echo "$( du -h /home/rack --max-depth=1  | head -5 ) MB"
+            echo "$( du -h /home/rack --max-depth=1  | head -5 )"
             echo
         else
             NotRun+=("home_rack")
@@ -108,20 +96,14 @@ case $1 in
 ;;
 esac
 
-# Start printing the output of script:
-
-PrintHeader "Server Date/Time"
-
-ServerTime
-
 echo 
-# Echo the filesystem the script is being run against
-echo "Running against $filesystem Filesystem"
 
 PrintHeader "Filesystem Information"
+
 df -PTh $filesystem;
 
-PrintHeader "Inode Information"
+echo
+
 df -PTi $filesystem;
 
 PrintHeader "Largest Directories"
@@ -129,9 +111,6 @@ du -hcx --max-depth=2 $filesystem 2>/dev/null | grep -P '^([0-9]\.*)*G(?!.*(\bto
 
 PrintHeader "Largest Files"
 find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -t
-
-PrintHeader "Largest Files Older Than 30 Days"
-find $filesystem -mount -ignore_readdir_race -type f -mtime +30 -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print; }' | column -t
 
 # Check to see if logical volumes are being used
 if [ $( vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4) ) ]; then
