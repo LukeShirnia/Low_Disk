@@ -26,7 +26,7 @@ home_rack() {         # Check disk usage in /home/rack
         rack=$( du -s /home/rack | awk '{print $1}' )
         if [ $rack -gt 1048576 ]; then 
             PrintHeader "/home/rack/ LARGE! Please check"
-            echo "$( du -h /home/rack --max-depth=1  | head -5 )"
+            echo "$( du -h /home/rack --max-depth=1  | sort -rh |head -5 )"
             echo
         else
             NotRun+=("home_rack")
