@@ -26,7 +26,7 @@ home_rack() {         # Check disk usage in /home/rack
         rack=$( du -s /home/rack | awk '{print $1}' )
         if [ $rack -gt 1048576 ]; then 
             PrintHeader "/home/rack/ LARGE! Please check"
-            echo "$( du -h /home/rack --max-depth=1  | sort -rh |head -5 )"
+            echo "[WARNING] $( du -h /home/rack --max-depth=1  | sort -rh |head -5 )"
             echo
         else
             NotRun+=("home_rack")
@@ -117,7 +117,7 @@ find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -
 vgs_output=$( vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4) &>/dev/null )
 return_code=$?
 
-if [ $return_code -le 0 ]; then
+if [ $return_code -le 0 ] && [ $( vgs | wc -l ) -gt 1  ]; then
     PrintHeader "Volume Group Usage"
     vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4)
 else
