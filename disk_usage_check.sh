@@ -43,7 +43,6 @@ large_directories() {
 }
 largest_files() {
     find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -t
-#    echo
 }
 logical_volumes() {
     df_zero=$( df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4 )
@@ -58,10 +57,9 @@ logical_volumes() {
     fi
 }
 lsof_check_number() {  # Check deleted files function
-    if [ $(lsof 2> /dev/null | awk '/$filesystem/ && /deleted/' | awk '{ if($9 > 1048576) print $9/1048576, "MB ",$9,$1 }' | sort -n -u | tail ) ] && [ $( which lsof 2>/dev/null ) ]; then
+    if [ "$( lsof | awk '/REG/ && !/stat: No such file or directory/ && !/DEL/ {if ($NF=="(deleted)") {x=3;y=1} else {x=2;y=0}; {print $(NF-x) "  " $(NF-y) } }'  | sort -n -u  | awk '{ if($1 > 1000000000 ) print $0 }'  | numfmt  --field=1 --to=iec | tail -5 )" ] && [ "$( which lsof 2>/dev/null )" ]; then
         PrintHeader "Open Deleted Files Over 1GB"
-        echo -ne "\n $BREAK \n \t Open Deleted Files on :$filesystem bigger than 1GB \n $BREAK \n\n";
-        lsof 2> /dev/null | awk '/$filesystem/ && /deleted/' | awk '{ if($9 > 1048576) print $9/1048576, "MB ",$9,$1 }' | sort -n -u | tail;
+        lsof | awk '/REG/ && !/stat: No such file or directory/ && !/DEL/ {if ($NF=="(deleted)") {x=3;y=1} else {x=2;y=0}; {print $(NF-x) "  " $(NF-y) } }'  | sort -n -u  | awk '{ if($1 > 1000000000 ) print $0 }'  | numfmt  --field=1 --to=iec | tail -5;
     else
         NotRun+=("lsof_large")
     fi
@@ -70,7 +68,11 @@ home_rack() {         # Check disk usage in /home/rack
     if [ -d "/home/rack" ]; then
         rack=$( du -s /home/rack | awk '{print $1}' )
         if [ $rack -gt 1048576 ]; then
-            PrintHeader "/home/rack/ LARGE! Please check"
+            if [[ $bbcode = 'True' ]]; then
+                PrintHeader "[b]/home/rack/ LARGE! Please check[/b]"
+            else
+                PrintHeader "/home/rack/ LARGE! Please check"
+            fi
             echo "[WARNING] $( du -h /home/rack --max-depth=1  | sort -rh |head -5 )"
         else
             NotRun+=("home_rack")
@@ -80,8 +82,10 @@ home_rack() {         # Check disk usage in /home/rack
     fi
 }
 NotRun() {           # Print a list of commands not run at the end of the script
-    echo "[/code]"
-    echo
+    if [[ $bbcode = 'True' ]]; then
+        echo "[/code]"
+    fi
+        echo
     echo $BREAK
     echo
 
