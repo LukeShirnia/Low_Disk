@@ -85,8 +85,8 @@ NotRun() {           # Print a list of commands not run at the end of the script
     if [[ $bbcode = 'True' ]]; then
         echo "[/code]"
     fi
-        echo
-    echo $BREAK
+    PrintHeader "OK Check List"
+    echo "The following have been checked and are ok: "
     echo
 
     for i in "${NotRun[@]}"; do
@@ -109,7 +109,6 @@ NotRun() {           # Print a list of commands not run at the end of the script
             echo "[WARNING] /home/rack does not appear to exist"
         ;;
         esac
-#        echo
     done
 }
 
