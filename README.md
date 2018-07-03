@@ -76,7 +76,11 @@ Filesystem                         Type  Inodes  IUsed   IFree IUse% Mounted on
   VG              #PV #LV #SN Attr   VSize   VFree
   vglocal20170715   1   3   0 wz--n- 135.63g 4.00m
 
+============================================================ 
+ 	 == OK Check List == 
 ============================================================
+
+The following have been checked and are ok: 
 
 [OK]      No deleted files over 1GB
 [OK]      /home/rack smaller than 1GB: 58 MB
