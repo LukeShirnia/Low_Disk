@@ -85,7 +85,7 @@ NotRun() {           # Print a list of commands not run at the end of the script
     if [[ $bbcode = 'True' ]]; then
         echo "[/code]"
     fi
-    PrintHeader "OK Check List"
+    echo -ne "\n$BREAK \n \t == "OK Check List" == \n$BREAK \n\n";
     echo "The following have been checked and are ok: "
     echo
 
