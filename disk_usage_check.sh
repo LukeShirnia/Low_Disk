@@ -36,13 +36,13 @@ filesystem_overview() {
 }
 large_directories() {
     if [[ ! $( du -hcx --max-depth=2 $filesystem 2>/dev/null | grep -P '^([0-9]\.*)*G(?!.*(\btotal\b|\./$))' ) ]]; then
-        du -hcx --max-depth=2 $filesystem 2>/dev/null | sort -rnk1,1 | head -10 | column -t;
+        du -hcx --max-depth=2 $filesystem 2>/dev/null | sort -rnk1,1 | head -10 | column -t 2>/dev/null;
     else
-        du -hcx --max-depth=2 $filesystem 2>/dev/null | grep -P '^([0-9]\.*)*G(?!.*(\btotal\b|\./$))' | sort -rnk1,1 | head -10 | column -t;
+        du -hcx --max-depth=2 $filesystem 2>/dev/null | grep -P '^([0-9]\.*)*G(?!.*(\btotal\b|\./$))' | sort -rnk1,1 | head -10 | column -t 2>/dev/null ;
     fi
 }
 largest_files() {
-    find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -t
+    find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -ti 2>/dev/null
 }
 logical_volumes() {
     df_zero=$( df -h $filesystem | awk '/dev/ {print $1}'| cut -d\- -f1| cut -d\/ -f4 )
@@ -73,7 +73,7 @@ home_rack() {         # Check disk usage in /home/rack
             else
                 PrintHeader "/home/rack/ LARGE! Please check"
             fi
-            echo "[WARNING] $( du -h /home/rack --max-depth=1  | sort -rh |head -5 )"
+            echo "[WARNING] $( du -h /home/rack --max-depth=1  | sort -rh |head -5 2>/dev/null )"
         else
             NotRun+=("home_rack")
         fi
