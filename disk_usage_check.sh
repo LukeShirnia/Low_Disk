@@ -36,17 +36,17 @@ filesystem_overview() {
 }
 large_directories() {
     if [[ ! $( du -hcx --max-depth=2 $filesystem 2>/dev/null | grep -P '^([0-9]\.*)*G(?!.*(\btotal\b|\./$))' ) ]]; then
-        du -hcx --max-depth=2 $filesystem 2>/dev/null | sort -rnk1,1 | head -10 | column -t;
+        du -hcx --max-depth=2 $filesystem 2>/dev/null | sort -rnk1,1 | head -10 | column -t 2>/dev/null;
     else
-        du -hcx --max-depth=2 $filesystem 2>/dev/null | grep -P '^([0-9]\.*)*G(?!.*(\btotal\b|\./$))' | sort -rnk1,1 | head -10 | column -t;
+        du -hcx --max-depth=2 $filesystem 2>/dev/null | grep -P '^([0-9]\.*)*G(?!.*(\btotal\b|\./$))' | sort -rnk1,1 | head -10 | column -t 2>/dev/null ;
     fi
 }
 largest_files() {
-    find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -t
+    find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -t 2>/dev/null
 }
 logical_volumes() {
-    df_zero=$( df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4 )
-    vgs_output=$( vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4) &>/dev/null )
+    df_zero=$( df -h $filesystem | awk '/dev/ {print $1}'| cut -d\- -f1| cut -d\/ -f4 )
+    vgs_output=$( vgs $(df -h $filesystem | awk '/dev/ {print $1}'| cut -d\- -f1| cut -d\/ -f4) &>/dev/null )
     return_code=$?
 
     if [ $return_code -le 0 ] && [ $( vgs | wc -l ) -gt 1  ]; then
@@ -57,9 +57,9 @@ logical_volumes() {
     fi
 }
 lsof_check_number() {  # Check deleted files function
-    if [ "$( lsof | awk '/REG/ && !/stat: No such file or directory/ && !/DEL/ {if ($NF=="(deleted)") {x=3;y=1} else {x=2;y=0}; {print $(NF-x) "  " $(NF-y) } }'  | sort -n -u  | awk '{ if($1 > 1000000000 ) print $1/1048576, "MB ", $NF }'  | tail -5 )" ] && [ "$( which lsof 2>/dev/null )" ]; then
+    if [ "$( lsof | awk '/REG/ && !/stat: No such file or directory/ && !/DEL/ {if ($NF=="(deleted)") {x=3;y=1} else {x=2;y=0}; {print $(NF-x) "  " $(NF-y) } }'  | awk '{ if($1 > 1000000000 ) print $1/1048576, "MB ", $NF }'  )" ] && [ "$( which lsof 2>/dev/null )" ]; then
         PrintHeader "Open Deleted Files Over 1GB"
-        lsof | awk '/REG/ && !/stat: No such file or directory/ && !/DEL/ {if ($NF=="(deleted)") {x=3;y=1} else {x=2;y=0}; {print $(NF-x) "  " $(NF-y) } }'  | sort -n -u  | awk '{ if($1 > 1000000000 ) print $1/1048576, "MB ", $NF }' | tail -5;
+        lsof | awk '/REG/ && !/stat: No such file or directory/ && !/DEL/ {if ($NF=="(deleted)") {x=3;y=1} else {x=2;y=0}; {print $(NF-x) "  " $(NF-y) } }'  | sort -n -u  | awk '{ if($1 > 1000000000 ) print $1/1048576, "MB ", $NF }' | tail -5 | head -5 ;
     else
         NotRun+=("lsof_large")
     fi
@@ -73,7 +73,7 @@ home_rack() {         # Check disk usage in /home/rack
             else
                 PrintHeader "/home/rack/ LARGE! Please check"
             fi
-            echo "[WARNING] $( du -h /home/rack --max-depth=1  | sort -rh |head -5 )"
+            echo "[WARNING] $( du -h /home/rack --max-depth=1  | sort -rh |head -5 2>/dev/null )"
         else
             NotRun+=("home_rack")
         fi
