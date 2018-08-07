@@ -49,7 +49,7 @@ logical_volumes() {
     vgs_output=$( vgs $(df -h $filesystem | awk '/dev/ {print $1}'| cut -d\- -f1| cut -d\/ -f4) ) 2>/dev/null
     return_code=$?
 
-    if [ $return_code -le 0 ] && [ $( vgs | wc -l 2>/dev/null ) -gt 1  ]; then
+    if [ $return_code -le 0 ] && [ $( vgs | wc -l ) 2>/dev/null -gt 1  ]; then
         PrintHeader "Volume Group Usage"
         vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4 2>/dev/null ) 2>/dev/null
     else
