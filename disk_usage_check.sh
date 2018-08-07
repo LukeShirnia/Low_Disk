@@ -42,7 +42,7 @@ large_directories() {
     fi
 }
 largest_files() {
-    find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -ti 2>/dev/null
+    find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -t 2>/dev/null
 }
 logical_volumes() {
     df_zero=$( df -h $filesystem | awk '/dev/ {print $1}'| cut -d\- -f1| cut -d\/ -f4 )
@@ -59,7 +59,7 @@ logical_volumes() {
 lsof_check_number() {  # Check deleted files function
     if [ "$( lsof | awk '/REG/ && !/stat: No such file or directory/ && !/DEL/ {if ($NF=="(deleted)") {x=3;y=1} else {x=2;y=0}; {print $(NF-x) "  " $(NF-y) } }'  | awk '{ if($1 > 1000000000 ) print $1/1048576, "MB ", $NF }'  )" ] && [ "$( which lsof 2>/dev/null )" ]; then
         PrintHeader "Open Deleted Files Over 1GB"
-        lsof | awk '/REG/ && !/stat: No such file or directory/ && !/DEL/ {if ($NF=="(deleted)") {x=3;y=1} else {x=2;y=0}; {print $(NF-x) "  " $(NF-y) } }'  | sort -n -u  | awk '{ if($1 > 1000000000 ) print $1/1048576, "MB ", $NF }' | tail -5 | head +5 ;
+        lsof | awk '/REG/ && !/stat: No such file or directory/ && !/DEL/ {if ($NF=="(deleted)") {x=3;y=1} else {x=2;y=0}; {print $(NF-x) "  " $(NF-y) } }'  | sort -n -u  | awk '{ if($1 > 1000000000 ) print $1/1048576, "MB ", $NF }' | tail -5 | head -5 ;
     else
         NotRun+=("lsof_large")
     fi
