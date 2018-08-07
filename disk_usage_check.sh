@@ -45,11 +45,11 @@ largest_files() {
     find $filesystem -mount -ignore_readdir_race -type f -exec du {} + 2>&1 | sort -rnk1,1 | head -20 | awk 'BEGIN{ CONVFMT="%.2f";}{ $1=( $1 / 1024 )"M"; print;}' | column -t 2>/dev/null
 }
 logical_volumes() {
-    df_zero=$( df -h $filesystem | awk '/dev/ {print $1}'| cut -d\- -f1| cut -d\/ -f4 2>/dev/null ) 2>/dev/null
-    vgs_output=$( vgs $(df -h $filesystem | awk '/dev/ {print $1}'| cut -d\- -f1| cut -d\/ -f4) 2>/dev/null ) 2>/dev/null
+    df_zero=$( df -h $filesystem | awk '/dev/ {print $1}'| cut -d\- -f1| cut -d\/ -f4 ) 2>/dev/null
+    vgs_output=$( vgs $(df -h $filesystem | awk '/dev/ {print $1}'| cut -d\- -f1| cut -d\/ -f4) ) 2>/dev/null
     return_code=$?
 
-    if [ $return_code -le 0 ] && [ $( vgs | wc -l ) -gt 1  ]; then
+    if [ $return_code -le 0 ] && [ $( vgs | wc -l 2>/dev/null ) -gt 1  ]; then
         PrintHeader "Volume Group Usage"
         vgs $(df -h $filesystem | grep dev | awk '{print $1}'| cut -d\- -f1| cut -d\/ -f4 2>/dev/null ) 2>/dev/null
     else
