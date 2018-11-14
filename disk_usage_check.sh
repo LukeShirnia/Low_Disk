@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export LVM_SUPPRESS_FD_WARNINGS=1
+
 BREAK="============================================================"
 
 NotRun=()              # Array to store all commands not run during script
