@@ -58,10 +58,10 @@ logical_volumes() {
         NotRun+=("vgs")
     fi
 }
-lsof_check_open_deleted() {  # Check top 5 open deleted files function
-    if [ "$( echo -e ${1} | awk '/REG/ && /deleted/ {x=3;y=1; print $(NF-x) "  " $(NF-y) }' | sort -nr | uniq  | awk '{ print $1/1048576, "MB ", $NF }' | head -5)" ]; then
-        PrintHeader "Open DELETED Files"
-        echo -e "$1" | awk '/REG/ && /deleted/ {x=3;y=1; print $(NF-x) "  " $(NF-y) }' | sort -nr | uniq | awk '{ print $1/1048576, "MB ", $NF }'  | head -5;
+lsof_check_open_deleted() {  # Check top 5 open deleted files function over 500MB
+    if [ "$( echo -e ${1} | awk '/REG/ && /deleted/ {x=3;y=1; print $(NF-x) "  " $(NF-y) }' | sort -nr | uniq  | awk '{ if($1 > 524288000 ) print $1/1048576, "MB ", $NF }')" ]; then
+        PrintHeader "Top 5 Open DELETED Files over 500MB"
+        echo -e "$1" | awk '/REG/ && /deleted/ {x=3;y=1; print $(NF-x) "  " $(NF-y) }' | sort -nr | uniq | awk '{ if($1 > 524288000 ) print $1/1048576, "MB ", $NF }'  | head -5;
     else
         NotRun+=("lsof_large_open_deleted");
     fi
@@ -102,7 +102,7 @@ NotRun() {           # Print a list of commands not run at the end of the script
             echo "[CHECK]   lsof not found, cannot check 'Open Deleted Files'"
         ;;
         "lsof_large_open_deleted" )
-            echo "[OK]      No open DELETED files"
+            echo "[OK]      No open DELETED files over 500MB"
         ;;
         "home_rack" )
             printf "[OK]      /home/rack smaller than 1GB: $(($rack / 1024)) MB\n"
