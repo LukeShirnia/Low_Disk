@@ -7,7 +7,7 @@ BREAK="============================================================"
 NotRun=()              # Array to store all commands not run during script
 
 PrintFirstHeader(){
-    if [[ $bbcode = 'True' ]]; then  
+    if [[ $bbcode = 'True' ]] && [[ "$inode" != "True" ]]; then
         echo -ne "\n$BREAK \n \t == $1 == \n$BREAK \n\n";
         echo "[code]"
     else
@@ -25,8 +25,9 @@ PrintHeader() {        # Common header used throughout script
     fi
 }
 usage() {              # Print script usage function
-    echo "Usage: $0 [-f] [-b] [-h]"
+    echo "Usage: $0 [-f] [-i] [-b] [-h]"
     echo "           -f filesystem        Specify a Filesystem"
+    echo "           -i                   Display Inode breakdown"
     echo "           -b                   Print with bbcode"
     echo "           -h                   Print help (usage)"
     exit 1
@@ -114,16 +115,88 @@ NotRun() {           # Print a list of commands not run at the end of the script
         esac
     done
 }
+check_inodes() {
+    intNumFiles=20;
+    intDepth=5;
+    strFsMount=$(df -P $filesystem | awk '$1 !~ /Filesystem/ {print $6}');
+
+    # BBCode header decleration
+    if [[ $bbcode = 'True' ]]; then
+        reportheader="\n[b]== Server Time at start ==[/b]";intStartTime=$(date +%s);
+        inodeheader="\n[b]== Inode Information for [ $strFsMount ]: ==[/b]";
+        storagedeviceheader="\n[b]Storage device behind filesystem [ $strFsMount ]:[/b]";
+        topinodeheader="\n[b]== Top inode Consumers on [ $strFsMount ]: ==[/b]";
+        bytesperinodeheader="\n[b]== Bytes per Inode format for [ $strFsMount ]: ==[/b]";
+        diskspaceheader="\n[b]== Disk [i]space[/i] [ $strFsMount ]: ==[/b]";
+        endtimeheader="\n[b]== Elapsed Time: ==[/b]";
+        completetimeheader="\n[b]== Server Time at completion: ==[/b]";
+    else
+        reportheader="\n== Server Time at start ==";intStartTime=$(date +%s);
+        inodeheader="\n== Inode Information for [ $strFsMount ]: ==";
+        storagedeviceheader="\nStorage device behind filesystem [ $strFsMount ]:";
+        topinodeheader="\n== Top inode Consumers on [ $strFsMount ]: ==";
+        bytesperinodeheader="\n== Bytes per Inode format for [ $strFsMount ]: ==";
+        diskspaceheader="\n== Disk space [ $strFsMount ]: ==";
+        endtimeheader="\n== Elapsed Time: ==";
+        completetimeheader="\n== Server Time at completion: ==";
+    fi
+
+    resize 2&> /dev/null;
+    echo -e "$reportheader";
+    date;
+
+    echo -e "$inodeheader"
+    df -PTi $strFsMount | column -t;
+    strFsDev=$(df -P $PWD | awk '$0 !~ /Filesystem/ {print $1}');
+    echo -e "$storagedeviceheader"
+    echo $strFsDev;
+    echo -e "$topinodeheader"
+
+    if [[ $bbcode = 'True' ]]; then
+        echo "[code]"
+    fi
+
+    awk '{ printf "%11s \t %-30s\n", $1, $2 }' <(echo "inode-Count Path");
+    awk '{ printf "%11'"'"'d \t %-30s\n", $1, $2 } ' <(
+     strMounts="$(findmnt -o TARGET -rn | sed 's/^\s*/\^/g' | sed 's/$/\$|/g' | tr -d '\n' | sed 's/|$/\n/')";
+           find $strFsMount -maxdepth $intDepth -xdev -type d -print0 2>/dev/null | while IFS= read -rd '' i;
+               do if ! echo $i | grep -E "$strMounts";
+                   then echo "$(find "$i" -xdev | wc -l ) $i ";
+               fi;
+           done | sort -n -r | head -n $intNumFiles
+    ) ;
+
+    if [[ $bbcode = 'True' ]]; then
+        echo "[/code]"
+    fi
+
+    echo -e "$bytesperinodeheader"
+    echo "$(printf "%.1f\n" $(echo "$(tune2fs -l $strFsDev | awk -F ": *" '$1 ~ /Inode count/ { inodecount = $2 }; $1 == "Block count" {printf "%s", $2}; $1 == "Block size" {printf "%s", " * " $2 " / " inodecount };' | tr -d '\n') /1024" | bc)) KB per inode"'!';
+
+    echo -e "$diskspaceheader"
+    filesystem_overview
+
+    intEndTime=$(date +%s);
+    intDuration=$((intEndTime-intStartTime));
+    echo -e "$endtimeheader"
+    printf '%dh:%dm:%ds\n' $(($intDuration/3600)) $(($intDuration%3600/60)) $(($intDuration%60));
+
+    echo -e "$completetimeheader"
+    date;
+}
 
 
 # Checking the script arguments and assigning the appropriate $filesystem
-while getopts ":f:hb" opt; do
+while getopts ":f:ihb" opt; do
     case ${opt} in
     f )
         filesystem=$OPTARG
         ;;
     b )
         bbcode='True'
+        ;;
+    i )
+        inode='True'
         ;;
     \? )
         echo "Invalid option: $OPTARG" 1>&2
@@ -157,31 +230,32 @@ echo
 
 PrintFirstHeader "$filesystem Filesystem Information"
 
-filesystem_overview
-
-PrintHeader "Largest Directories"
-
-large_directories
-
-PrintHeader "Largest Files"
-
-largest_files
-
-# Check to see if logical volumes are being used
-logical_volumes
-
-if  [ "$( which lsof 2>/dev/null )" ]; then
-    # Check open deleted filed
-    lsof_check_open_deleted
+# If inode is specified, we only want to get a breakdown of the systems inodes
+if [[ "$inode" = "True" ]]; then
+    echo "Checking Inodes. Please note this could take a while to run..."
+    check_inodes
+# If inode is not specified, run a normal filesystem breakdown
 else
-    NotRun+=("lsof_large_open_deleted");
+    filesystem_overview
+    PrintHeader "Largest Directories"
+    large_directories
+    PrintHeader "Largest Files"
+    largest_files
+    # Check to see if logical volumes are being used
+    logical_volumes
+
+    if  [ "$( which lsof 2>/dev/null )" ]; then
+        # Check open deleted filed
+        lsof_check_open_deleted
+    else
+        NotRun+=("lsof_large_open_deleted");
+    fi
+
+    # Run home_rack function to check disk usage
+    home_rack
+    # Print commands/sections not run
+    NotRun
 fi
-
-# Run home_rack function to check disk usage
-home_rack
-
-# Print commands/sections not run
-NotRun
 
 echo
 echo $BREAK
