@@ -32,10 +32,33 @@ usage() {              # Print script usage function
     echo "           -h, --help                     Print help (usage)"
     exit 1
 }
+start_time() {
+    intStartTime=$(date +%s)
+    PrintFirstHeader "Server Time at start"
+    if [[ $bbcode = 'True' ]] && [[ "$inode" == "True" ]]; then
+        echo "[code]"
+    fi
+    date
+}
+end_time() {
+    intEndTime=$(date +%s);
+    intDuration=$((intEndTime-intStartTime));
+    PrintHeader "Elapsed Time"
+    printf '%dh:%dm:%ds\n' $(($intDuration/3600)) $(($intDuration%3600/60)) $(($intDuration%60));
+
+    PrintHeader "Server Time at completion"
+    date;
+    if [[ $bbcode = 'True' ]]; then
+        echo "[/code]"
+    fi
+}
 filesystem_overview() {
     df -PTh $filesystem;
     echo
     df -PTi $filesystem;
+    if [[ $bbcode = 'True' ]]; then
+        echo "[/code]"
+    fi
 }
 large_directories() {
     if [[ ! $( du -hcx --max-depth=2 $filesystem 2>/dev/null | grep -P '^([0-9]\.*)*G(?!.*(\btotal\b|\./$))' ) ]]; then
@@ -119,14 +142,10 @@ check_inodes() {
     intNumFiles=20;
     intDepth=5;
     strFsMount=$(df -P $filesystem | awk '$1 !~ /Filesystem/ {print $6}');
-    intStartTime=$(date +%s)
 
     resize 2&> /dev/null;
-    PrintFirstHeader "Server Time at start"
-    if [[ $bbcode = 'True' ]]; then
-        echo "[code]"
-    fi
-    date;
+
+    start_time
 
     PrintHeader "Inode Information for [ $strFsMount ]"
 
@@ -152,16 +171,8 @@ check_inodes() {
     PrintHeader "Disk space [ $strFsMount ]"
     filesystem_overview
 
-    intEndTime=$(date +%s);
-    intDuration=$((intEndTime-intStartTime));
-    PrintHeader "Elapsed Time"
-    printf '%dh:%dm:%ds\n' $(($intDuration/3600)) $(($intDuration%3600/60)) $(($intDuration%60));
+    end_time
 
-    PrintHeader "Server Time at completion"
-    date;
-    if [[ $bbcode = 'True' ]]; then
-        echo "[/code]"
-    fi
 }
 
 
@@ -243,6 +254,7 @@ if [[ "$inode" = "True" ]]; then
 # If inode is not specified, run a normal filesystem breakdown
 else
     filesystem_overview
+    start_time
     PrintHeader "Largest Directories"
     large_directories
     PrintHeader "Largest Files"
@@ -261,6 +273,7 @@ else
     home_rack
     # Print commands/sections not run
     NotRun
+    end_time
 fi
 
 echo
