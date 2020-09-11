@@ -8,7 +8,7 @@ NotRun=()              # Array to store all commands not run during script
 
 PrintFirstHeader(){
     if [[ $bbcode = 'True' ]] && [[ "$inode" != "True" ]]; then
-        echo -ne "\n$BREAK \n \t == $1 == \n$BREAK \n\n";
+        echo -ne "\n$BREAK \n \t == [b] $1 [/b]== \n$BREAK \n\n";
         echo "[code]"
     else
         echo -ne "\n$BREAK \n \t == $1 == \n$BREAK \n\n";
@@ -119,42 +119,22 @@ check_inodes() {
     intNumFiles=20;
     intDepth=5;
     strFsMount=$(df -P $filesystem | awk '$1 !~ /Filesystem/ {print $6}');
-
-    # BBCode header decleration
-    if [[ $bbcode = 'True' ]]; then
-        reportheader="\n[b]== Server Time at start ==[/b]";intStartTime=$(date +%s);
-        inodeheader="\n[b]== Inode Information for [ $strFsMount ]: ==[/b]";
-        storagedeviceheader="\n[b]Storage device behind filesystem [ $strFsMount ]:[/b]";
-        topinodeheader="\n[b]== Top inode Consumers on [ $strFsMount ]: ==[/b]";
-        bytesperinodeheader="\n[b]== Bytes per Inode format for [ $strFsMount ]: ==[/b]";
-        diskspaceheader="\n[b]== Disk [i]space[/i] [ $strFsMount ]: ==[/b]";
-        endtimeheader="\n[b]== Elapsed Time: ==[/b]";
-        completetimeheader="\n[b]== Server Time at completion: ==[/b]";
-    else
-        reportheader="\n== Server Time at start ==";intStartTime=$(date +%s);
-        inodeheader="\n== Inode Information for [ $strFsMount ]: ==";
-        storagedeviceheader="\nStorage device behind filesystem [ $strFsMount ]:";
-        topinodeheader="\n== Top inode Consumers on [ $strFsMount ]: ==";
-        bytesperinodeheader="\n== Bytes per Inode format for [ $strFsMount ]: ==";
-        diskspaceheader="\n== Disk space [ $strFsMount ]: ==";
-        endtimeheader="\n== Elapsed Time: ==";
-        completetimeheader="\n== Server Time at completion: ==";
-    fi
+    intStartTime=$(date +%s)
 
     resize 2&> /dev/null;
-    echo -e "$reportheader";
-    date;
-
-    echo -e "$inodeheader"
-    df -PTi $strFsMount | column -t;
-    strFsDev=$(df -P $PWD | awk '$0 !~ /Filesystem/ {print $1}');
-    echo -e "$storagedeviceheader"
-    echo $strFsDev;
-    echo -e "$topinodeheader"
-
+    PrintFirstHeader "Server Time at start"
     if [[ $bbcode = 'True' ]]; then
         echo "[code]"
     fi
+    date;
+
+    PrintHeader "Inode Information for [ $strFsMount ]"
+
+    df -PTi $strFsMount | column -t;
+    strFsDev=$(df -P $PWD | awk '$0 !~ /Filesystem/ {print $1}');
+    PrintHeader "Storage device behind filesystem [ $strFsMount ]"
+    echo $strFsDev;
+    PrintHeader "Top inode Consumers on [ $strFsMount ]"
 
     awk '{ printf "%11s \t %-30s\n", $1, $2 }' <(echo "inode-Count Path");
     awk '{ printf "%11'"'"'d \t %-30s\n", $1, $2 } ' <(
@@ -166,23 +146,22 @@ check_inodes() {
            done | sort -n -r | head -n $intNumFiles
     ) ;
 
-    if [[ $bbcode = 'True' ]]; then
-        echo "[/code]"
-    fi
-
-    echo -e "$bytesperinodeheader"
+    PrintHeader "Bytes per Inode format for [ $strFsMount ]"
     echo "$(printf "%.1f\n" $(echo "$(tune2fs -l $strFsDev | awk -F ": *" '$1 ~ /Inode count/ { inodecount = $2 }; $1 == "Block count" {printf "%s", $2}; $1 == "Block size" {printf "%s", " * " $2 " / " inodecount };' | tr -d '\n') /1024" | bc)) KB per inode"'!';
 
-    echo -e "$diskspaceheader"
+    PrintHeader "Disk space [ $strFsMount ]"
     filesystem_overview
 
     intEndTime=$(date +%s);
     intDuration=$((intEndTime-intStartTime));
-    echo -e "$endtimeheader"
+    PrintHeader "Elapsed Time"
     printf '%dh:%dm:%ds\n' $(($intDuration/3600)) $(($intDuration%3600/60)) $(($intDuration%60));
 
-    echo -e "$completetimeheader"
+    PrintHeader "Server Time at completion"
     date;
+    if [[ $bbcode = 'True' ]]; then
+        echo "[/code]"
+    fi
 }
 
 
