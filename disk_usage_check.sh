@@ -26,10 +26,10 @@ PrintHeader() {        # Common header used throughout script
 }
 usage() {              # Print script usage function
     echo "Usage: $0 [-f] [-i] [-b] [-h]"
-    echo "           -f filesystem        Specify a Filesystem"
-    echo "           -i                   Display Inode breakdown"
-    echo "           -b                   Print with bbcode"
-    echo "           -h                   Print help (usage)"
+    echo "           -i, --inode                    Display Inode breakdown"
+    echo "           -f, --filesystem <filesystem>  Specify a Filesystem"
+    echo "           -b, --bbcode                   Print with bbcode"
+    echo "           -h, --help                     Print help (usage)"
     exit 1
 }
 filesystem_overview() {
@@ -186,6 +186,33 @@ check_inodes() {
 }
 
 
+# Allow for long options. Code based off https://stackoverflow.com/a/30026641
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--help")
+        set -- "$@" "-h"
+        ;;
+    "--inode")
+        set -- "$@" "-i"
+        ;;
+    "--bbcode")
+        set -- "$@" "-b"
+        ;;
+    "--filesystem")
+        set -- "$@" "-f"
+        ;;
+    "--"*)
+        echo "Invalid option: ${arg}" 1>&2
+        usage ${arg}
+        exit 2
+        ;;
+    *)
+        set -- "$@" "$arg"
+  esac
+done
+
+
 # Checking the script arguments and assigning the appropriate $filesystem
 while getopts ":f:ihb" opt; do
     case ${opt} in
@@ -204,7 +231,7 @@ while getopts ":f:ihb" opt; do
         exit 1
         ;;
     : )
-        echo "Invalid option: -$OPTARG requires an argument" 1>&2
+        echo "Invalid option: -f, --filesystem requires an argument" 1>&2
         exit 1
         ;;
     h )
