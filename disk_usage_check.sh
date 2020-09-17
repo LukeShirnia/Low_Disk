@@ -18,7 +18,7 @@ PrintHeader() {        # Common header used throughout script
     if [[ $bbcode = 'True' ]]; then
         echo "[/code]"
         echo
-        echo -ne "$BREAK \n \t == $1 == \n$BREAK \n\n";
+        echo -ne "$BREAK \n \t == [b] $1 [/b] == \n$BREAK \n\n";
         echo '[code]'
     else
         echo -ne "\n$BREAK \n \t == $1 == \n$BREAK \n\n";
